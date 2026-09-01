@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zákaznický dotazník</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --navy:#152238;
+    --navy-2:#1f3350;
+    --teal:#1c8c86;
+    --teal-dark:#136560;
+    --bg:#f4f6f8;
+    --card:#ffffff;
+    --border:#dde2e8;
+    --text:#1c2530;
+    --muted:#68727e;
+    --danger:#b3432f;
+    --empty-red:#f3a89e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+  }
+  h1,h2,h3{
+    font-family:'Space Grotesk',sans-serif;
+    margin:0;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px 100px;}
+
+  header.top{
+    background:var(--navy);
+    color:#fff;
+    padding:28px 20px 22px;
+    margin-bottom:24px;
+  }
+  header.top .wrap{padding:0 20px;}
+  header.top h1{font-size:22px;font-weight:600;letter-spacing:-0.01em;}
+  header.top p{margin:6px 0 0;color:#aebbcc;font-size:14px;}
+
+  .info-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:22px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .info-card .full{grid-column:1/-1;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--muted);
+    margin-bottom:5px;
+    text-transform:none;
+  }
+  .field input{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--border);
+    border-radius:7px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--text);
+    background:#fbfcfd;
+  }
+  .field input:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+
+  .section{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-left:3px solid var(--teal);
+    border-radius:8px;
+    margin-bottom:10px;
+    overflow:hidden;
+  }
+  .section-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:13px 14px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .section-header h3{font-size:14.5px;font-weight:600;flex:1;}
+  .toggle-btn{
+    background:none;
+    border:none;
+    padding:2px;
+    font-size:13px;
+    color:var(--muted);
+    line-height:1;
+    transform:rotate(0deg);
+    transition:transform .18s;
+    flex:0 0 auto;
+  }
+  .section.open .toggle-btn{transform:rotate(90deg);}
+  .status-dot{
+    flex:0 0 auto;
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    border:2px solid var(--empty-red);
+    background:var(--empty-red);
+  }
+  .status-dot.filled{
+    border-color:var(--teal);
+    background:var(--teal);
+  }
+  .gear-btn{
+    background:none;
+    border:none;
+    font-size:15px;
+    padding:3px;
+    flex:0 0 auto;
+    line-height:1;
+    border-radius:6px;
+    opacity:.75;
+  }
+  .gear-btn:hover{opacity:1;background:var(--bg);}
+  .section-body{
+    padding:0 16px 16px;
+  }
+  .section-body[hidden]{display:none;}
+  .section .hint{
+    font-size:12.5px;
+    color:var(--muted);
+    margin:0 0 10px;
+  }
+  .hint-edit{margin:0 0 10px;}
+  .hint-edit .edit-label{
+    display:block;
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+    margin:0 0 4px;
+  }
+  .hint-edit input{
+    width:100%;
+    border:1px solid var(--teal);
+    border-radius:7px;
+    padding:8px 9px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+    background:#fbfcfd;
+    margin-bottom:8px;
+  }
+  .hint-edit textarea{
+    width:100%;
+    min-height:48px;
+    resize:vertical;
+    border:1px solid var(--teal);
+    border-radius:7px;
+    padding:8px 9px;
+    font-family:inherit;
+    font-size:12.5px;
+    color:var(--text);
+    background:#fbfcfd;
+    margin-bottom:6px;
+  }
+  .hint-edit-actions{display:flex;gap:8px;}
+  .btn-small{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:6px;
+    border:none;
+  }
+  .btn-small.btn-accent{background:var(--teal);color:#fff;}
+  .btn-small.btn-ghost{background:var(--bg);color:var(--muted);border:1px solid var(--border);}
+  .section textarea{
+    width:100%;
+    min-height:64px;
+    resize:vertical;
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:9px 10px;
+    font-family:inherit;
+    font-size:13.5px;
+    color:var(--text);
+    background:#fbfcfd;
+  }
+  .section textarea:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+
+  .drag-handle{
+    flex:0 0 auto;
+    font-size:14px;
+    color:var(--muted);
+    cursor:grab;
+    line-height:1;
+  }
+  .section[draggable="true"]{cursor:grab;}
+  .section.dragging{opacity:.5;}
+  .section.drag-over{border-top:2px solid var(--teal);}
+
+  .manage-bar{display:flex;justify-content:flex-end;margin:2px 0 24px;}
+  .manage-gear-btn{
+    background:var(--card);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:13px;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+    padding:8px 14px;
+    border-radius:7px;
+  }
+  .manage-gear-btn:hover{background:#eef1f4;}
+  .manage-panel{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    margin-top:8px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .manage-panel[hidden]{display:none;}
+  .manage-panel .panel-label{font-size:12px;font-weight:600;color:var(--muted);}
+  .add-question-form{display:flex;flex-direction:column;gap:8px;}
+  .add-question-form input, .add-question-form textarea{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:7px;
+    padding:9px 10px;
+    font-family:inherit;
+    font-size:13.5px;
+    color:var(--text);
+    background:#fbfcfd;
+  }
+  .add-question-form textarea{min-height:52px;resize:vertical;}
+  .add-question-form input:focus, .add-question-form textarea:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+
+  .actionbar{
+    position:sticky;
+    bottom:0;
+    background:rgba(244,246,248,0.94);
+    backdrop-filter:blur(6px);
+    border-top:1px solid var(--border);
+    padding:12px 20px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    z-index:20;
+  }
+  .actionbar .inner{max-width:760px;width:100%;display:flex;gap:10px;align-items:center;}
+  button{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    border:none;
+    border-radius:8px;
+    padding:11px 18px;
+    cursor:pointer;
+    transition:opacity .15s;
+  }
+  button:hover{opacity:.9;}
+  button:disabled{opacity:.5;cursor:default;}
+  .btn-primary{background:var(--navy);color:#fff;}
+  .btn-accent{background:var(--teal);color:#fff;}
+  .status{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+
+  #printable{
+    position:fixed;
+    left:-9999px;
+    top:0;
+    width:760px;
+    background:#fff;
+    padding:36px;
+    font-family:'Inter',sans-serif;
+    color:#1c2530;
+  }
+  #printable h1{font-size:20px;font-family:'Space Grotesk',sans-serif;}
+  #printable .meta{font-size:13px;color:#4a5561;margin:4px 0 22px;}
+  #printable .meta div{margin-bottom:2px;}
+  #printable .psection{margin-bottom:14px;page-break-inside:avoid;}
+  #printable .psection h3{font-size:13.5px;font-family:'Space Grotesk',sans-serif;margin-bottom:4px;}
+  #printable .psection p{font-size:12.5px;margin:0;white-space:pre-wrap;color:#2a3340;}
+  #printable .empty{color:#9aa3ad;font-style:italic;}
+
+  .toast{
+    position:fixed;
+    bottom:70px;left:50%;
+    transform:translateX(-50%);
+    background:var(--navy);
+    color:#fff;
+    padding:10px 16px;
+    border-radius:8px;
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s;
+    z-index:50;
+    max-width:90%;
+    text-align:center;
+  }
+  .toast.show{opacity:1;}
+
+  @media(max-width:600px){
+    .info-card{grid-template-columns:1fr;}
+    .actionbar .inner{flex-wrap:wrap;}
+    .status{margin-left:0;width:100%;order:3;text-align:center;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>Zákaznický dotazník</h1>
+    <p>Vyplňte poznámky ke schůzce, vygenerujte PDF a odešlete e-mailem.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="info-card">
+    <div class="field">
+      <label for="ic">IČ zákazníka</label>
+      <input id="ic" type="text" placeholder="12345678">
+    </div>
+    <div class="field">
+      <label for="datum">Datum</label>
+      <input id="datum" type="date">
+    </div>
+    <div class="field full">
+      <label for="nazev">Název zákazníka</label>
+      <input id="nazev" type="text" placeholder="Firma s.r.o.">
+    </div>
+  </div>
+
+  <div id="sections"></div>
+
+  <div class="manage-bar">
+    <button type="button" class="manage-gear-btn" id="manageGearBtn" title="Spravovat otázky">⚙️ Spravovat otázky</button>
+  </div>
+  <div class="manage-panel" id="managePanel" hidden>
+    <div>
+      <span class="panel-label">Pořadí otázek</span><br>
+      <button type="button" class="btn-small btn-ghost" id="reorderToggleBtn" style="margin-top:6px;">Přeskládat pořadí</button>
+    </div>
+    <div class="add-question-form">
+      <span class="panel-label">Přidat novou otázku</span>
+      <input type="text" id="newQTitle" placeholder="Název otázky (např. Cloudové služby)">
+      <textarea id="newQHint" placeholder="Popis / kontext otázky…"></textarea>
+      <div class="hint-edit-actions">
+        <button type="button" class="btn-small btn-accent" id="addQuestionBtn">Přidat otázku</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="printable"></div>
+
+<div class="actionbar">
+  <div class="inner">
+    <button class="btn-primary" id="pdfBtn">Stáhnout PDF</button>
+    <button class="btn-accent" id="mailBtn">Odeslat e-mailem</button>
+    <span class="status" id="status"></span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let CATEGORIES = [
+  {id:"osobni", emoji:"🤵", title:"Osobní informace", hint:"Vnímání kontextu situace (dovolené, Vánoce, sportovní/kulturní akce), prostředí, spojování s koníčky, příběh člověka.", answer:"", isCustom:false},
+  {id:"business", emoji:"💲", title:"Informace k businessu", hint:"LinkedIn, bizmachine, web, soc. sítě. Otevřené otázky na fungování a historii firmy, co pochválit, pobočky a oddělení, kde může pomoct VDF.", answer:"", isCustom:false},
+  {id:"konektivita", emoji:"📡", title:"Konektivita", hint:"Řešení konektivity do firmy, propojení poboček, lokální/vzdálené připojení, spokojenost, backup a jeho absence.", answer:"", isCustom:false},
+  {id:"licence", emoji:"💻", title:"Licence", hint:"Licence pro komunikaci/poštu, kdo rozhoduje o licenční politice, zkušenost s MS auditem a jeho výsledek.", answer:"", isCustom:false},
+  {id:"bezpecnost", emoji:"📲", title:"Bezpečnost včetně mobilních tarifů", hint:"Kdo řeší bezpečnostní politiku, míra zabezpečení, rizika ztráty telefonu, aplikací, GDPR.", answer:"", isCustom:false},
+  {id:"ustredna", emoji:"📞", title:"Ústředna", hint:"Stáří ústředny, frekvence obměny HW, výhled rozvoje služby (RBM, chatbot), reakční doba na výpadek.", answer:"", isCustom:false},
+  {id:"servery", emoji:"📊", title:"Servery", hint:"IT interně/externě, řešení serverů a úložišť, frekvence obměny, náklady a rizika lokálního serveru.", answer:"", isCustom:false},
+  {id:"uloziste", emoji:"💾", title:"Úložiště", hint:"Zálohování dat, ochrana zálohy, postoj ke cloudu.", answer:"", isCustom:false},
+  {id:"kamery", emoji:"🎥", title:"Kamerové systémy", hint:"Relevance tématu, práce se záznamy, kde by kamery dávaly smysl.", answer:"", isCustom:false},
+  {id:"hw", emoji:"📠", title:"HW ve firmě (počítače, síťové prvky)", hint:"Notebooky/PC a jejich počet, doba výměny, řešení wifi, poslední investice, MDM ochrana koncových zařízení.", answer:"", isCustom:false},
+  {id:"sim", emoji:"📱", title:"Hlasové SIM", hint:"S kým řešeno, spokojenost, objem dat, HW budget, signál. Pokud u VDF – co zlepšit co nejdříve.", answer:"", isCustom:false},
+  {id:"vozy", emoji:"🚘", title:"Vozový park", hint:"Počet služebních aut, kniha jízd, ideální fungování evidence vozového parku.", answer:"", isCustom:false},
+  {id:"edohled", emoji:"📺", title:"E-Dohled", hint:"Potenciál na doprodej – monitoring zemědělských strojů, nákladních aut.", answer:"", isCustom:false},
+  {id:"iot", emoji:"🔋", title:"IoT Sense", hint:"Provoz zákazníka (sklady, převoz surovin), potenciál monitoringu teploty a vlhkosti.", answer:"", isCustom:false},
+  {id:"5g", emoji:"📶", title:"5G", hint:"Technické postupy výroby, rychlý sběr a přenos dat, potíže při výrobě, robotizace, vizionář ve firmě.", answer:"", isCustom:false},
+  {id:"bigdata", emoji:"📈", title:"Big Data", hint:"Práce s daty, plánované projekty, možnosti do budoucna, zviditelnění.", answer:"", isCustom:false},
+  {id:"disaster", emoji:"🤝", title:"Disaster recovery", hint:"Kritické provozy, řešení výpadků, možné finanční ztráty. Zvážit interní audit útraty u jiných poskytovatelů.", answer:"", isCustom:false}
+];
+
+const STORAGE_KEY = "dotaznik-draft";
+const sectionsEl = document.getElementById("sections");
+const statusEl = document.getElementById("status");
+const toastEl = document.getElementById("toast");
+const managePanel = document.getElementById("managePanel");
+const reorderToggleBtn = document.getElementById("reorderToggleBtn");
+
+// Storage: uses Claude's window.storage when available (inside claude.ai),
+// falls back to plain browser localStorage when hosted elsewhere.
+const storageAPI = window.storage ? window.storage : {
+  async get(key){
+    const v = localStorage.getItem(key);
+    return v === null ? null : {key, value:v, shared:false};
+  },
+  async set(key, value){
+    localStorage.setItem(key, value);
+    return {key, value, shared:false};
+  },
+  async delete(key){
+    localStorage.removeItem(key);
+    return {key, deleted:true, shared:false};
+  },
+  async list(prefix){
+    return {keys: Object.keys(localStorage).filter(k=>!prefix || k.startsWith(prefix))};
+  }
+};
+
+let reorderMode = false;
+let draggingId = null;
+
+function showToast(msg, ms=3200){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>toastEl.classList.remove("show"), ms);
+}
+
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.textContent = str || "";
+  return d.innerHTML;
+}
+
+function sectionHTML(cat){
+  const headerLeft = reorderMode
+    ? `<span class="drag-handle" title="Přetáhněte pro přeskládání">⠿</span>`
+    : `<button type="button" class="toggle-btn" aria-label="Rozbalit">›</button>`;
+  const gearBtn = reorderMode
+    ? ""
+    : `<button type="button" class="gear-btn" data-id="${cat.id}" title="Upravit otázku">⚙️</button>`;
+  return `
+    <div class="section" id="sec-${cat.id}" data-id="${cat.id}" ${reorderMode ? 'draggable="true"' : ""}>
+      <div class="section-header" data-id="${cat.id}">
+        ${headerLeft}
+        <span class="status-dot" id="dot-${cat.id}" title="Nevyplněno"></span>
+        <h3 id="title-${cat.id}">${cat.emoji ? cat.emoji + " " : ""}<span class="title-text">${escapeHtml(cat.title)}</span></h3>
+        ${gearBtn}
+      </div>
+      <div class="section-body" id="body-${cat.id}" hidden>
+        <p class="hint" id="hint-${cat.id}">${escapeHtml(cat.hint)}</p>
+        <div class="hint-edit" id="hintedit-${cat.id}" hidden>
+          <label class="edit-label" for="titleinput-${cat.id}">Název otázky</label>
+          <input type="text" id="titleinput-${cat.id}" value="${escapeHtml(cat.title)}">
+          <label class="edit-label" for="hintinput-${cat.id}">Popis / kontext</label>
+          <textarea id="hintinput-${cat.id}">${escapeHtml(cat.hint)}</textarea>
+          <div class="hint-edit-actions">
+            <button type="button" class="btn-small btn-accent" data-save-hint="${cat.id}">Uložit</button>
+            <button type="button" class="btn-small btn-ghost" data-cancel-hint="${cat.id}">Zrušit</button>
+          </div>
+        </div>
+        <textarea id="ta-${cat.id}" placeholder="Poznámky…">${escapeHtml(cat.answer)}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+function renderSections(){
+  sectionsEl.innerHTML = CATEGORIES.map(sectionHTML).join("");
+  CATEGORIES.forEach(cat=>updateDot(cat.id));
+}
+
+function syncFromDom(){
+  CATEGORIES.forEach(c=>{
+    const ta = document.getElementById(`ta-${c.id}`);
+    const h = document.getElementById(`hint-${c.id}`);
+    if(ta) c.answer = ta.value;
+    if(h) c.hint = h.textContent;
+  });
+}
+
+function toggleSection(id, forceOpen){
+  const body = document.getElementById(`body-${id}`);
+  const sec = document.getElementById(`sec-${id}`);
+  if(!body || !sec) return;
+  const shouldOpen = forceOpen !== undefined ? forceOpen : body.hidden;
+  body.hidden = !shouldOpen;
+  sec.classList.toggle("open", shouldOpen);
+}
+
+function updateDot(id){
+  const ta = document.getElementById(`ta-${id}`);
+  const dot = document.getElementById(`dot-${id}`);
+  if(!ta || !dot) return;
+  const filled = ta.value.trim().length > 0;
+  dot.classList.toggle("filled", filled);
+  dot.title = filled ? "Vyplněno" : "Nevyplněno";
+}
+
+renderSections();
+
+// clicks inside the question list: expand/collapse, edit question, save/cancel hint edit
+sectionsEl.addEventListener("click", (e)=>{
+  const gear = e.target.closest(".gear-btn");
+  const saveBtn = e.target.closest("[data-save-hint]");
+  const cancelBtn = e.target.closest("[data-cancel-hint]");
+  const header = e.target.closest(".section-header");
+
+  if(gear){
+    const id = gear.dataset.id;
+    toggleSection(id, true);
+    const editBox = document.getElementById(`hintedit-${id}`);
+    const hintP = document.getElementById(`hint-${id}`);
+    const opening = editBox.hidden;
+    editBox.hidden = !opening;
+    hintP.hidden = opening;
+    if(opening) document.getElementById(`hintinput-${id}`).focus();
+    return;
+  }
+  if(saveBtn){
+    const id = saveBtn.dataset.saveHint;
+    const newTitle = document.getElementById(`titleinput-${id}`).value.trim();
+    const newHint = document.getElementById(`hintinput-${id}`).value.trim();
+    if(newTitle){
+      document.querySelector(`#title-${id} .title-text`).textContent = newTitle;
+    }
+    document.getElementById(`hint-${id}`).textContent = newHint;
+    document.getElementById(`hintedit-${id}`).hidden = true;
+    document.getElementById(`hint-${id}`).hidden = false;
+    const cat = CATEGORIES.find(c=>c.id===id);
+    if(cat){
+      if(newTitle) cat.title = newTitle;
+      cat.hint = newHint;
+    }
+    scheduleSave();
+    return;
+  }
+  if(cancelBtn){
+    const id = cancelBtn.dataset.cancelHint;
+    document.getElementById(`titleinput-${id}`).value = document.querySelector(`#title-${id} .title-text`).textContent;
+    document.getElementById(`hintinput-${id}`).value = document.getElementById(`hint-${id}`).textContent;
+    document.getElementById(`hintedit-${id}`).hidden = true;
+    document.getElementById(`hint-${id}`).hidden = false;
+    return;
+  }
+  if(header){
+    toggleSection(header.dataset.id);
+  }
+});
+
+// autosave on typing inside the question list (notes)
+sectionsEl.addEventListener("input", (e)=>{
+  if(e.target.matches('textarea[id^="ta-"]')){
+    updateDot(e.target.id.replace("ta-",""));
+  }
+  scheduleSave();
+});
+
+// drag & drop reordering
+sectionsEl.addEventListener("dragstart", (e)=>{
+  const sec = e.target.closest(".section");
+  if(!sec || !reorderMode) return;
+  draggingId = sec.dataset.id;
+  e.dataTransfer.effectAllowed = "move";
+  sec.classList.add("dragging");
+});
+sectionsEl.addEventListener("dragend", (e)=>{
+  const sec = e.target.closest(".section");
+  if(sec) sec.classList.remove("dragging");
+  sectionsEl.querySelectorAll(".section.drag-over").forEach(s=>s.classList.remove("drag-over"));
+});
+sectionsEl.addEventListener("dragover", (e)=>{
+  if(!reorderMode) return;
+  e.preventDefault();
+  const sec = e.target.closest(".section");
+  if(!sec) return;
+  sectionsEl.querySelectorAll(".section.drag-over").forEach(s=>s.classList.remove("drag-over"));
+  sec.classList.add("drag-over");
+});
+sectionsEl.addEventListener("drop", (e)=>{
+  if(!reorderMode) return;
+  e.preventDefault();
+  const targetSec = e.target.closest(".section");
+  if(!targetSec || !draggingId) return;
+  const targetId = targetSec.dataset.id;
+  if(targetId === draggingId){ draggingId = null; return; }
+  syncFromDom();
+  const fromIdx = CATEGORIES.findIndex(c=>c.id===draggingId);
+  const toIdx = CATEGORIES.findIndex(c=>c.id===targetId);
+  const [moved] = CATEGORIES.splice(fromIdx,1);
+  CATEGORIES.splice(toIdx,0,moved);
+  draggingId = null;
+  renderSections();
+  scheduleSave();
+});
+
+// manage panel: toggle visibility, reorder mode, add question
+document.getElementById("manageGearBtn").addEventListener("click", ()=>{
+  managePanel.hidden = !managePanel.hidden;
+});
+
+reorderToggleBtn.addEventListener("click", ()=>{
+  syncFromDom();
+  reorderMode = !reorderMode;
+  reorderToggleBtn.textContent = reorderMode ? "Hotovo" : "Přeskládat pořadí";
+  renderSections();
+  if(reorderMode) showToast("Přetáhněte otázky myší a seřaďte je podle potřeby.");
+});
+
+document.getElementById("addQuestionBtn").addEventListener("click", ()=>{
+  const titleInput = document.getElementById("newQTitle");
+  const hintInput = document.getElementById("newQHint");
+  const title = titleInput.value.trim();
+  if(!title){
+    titleInput.focus();
+    return;
+  }
+  const hint = hintInput.value.trim();
+  syncFromDom();
+  const id = `custom-${Date.now()}`;
+  CATEGORIES.push({id, emoji:"❓", title, hint, answer:"", isCustom:true});
+  titleInput.value = "";
+  hintInput.value = "";
+  renderSections();
+  toggleSection(id, true);
+  document.getElementById(`sec-${id}`).scrollIntoView({behavior:"smooth", block:"center"});
+  scheduleSave();
+});
+
+document.getElementById("datum").valueAsDate = new Date();
+
+// autosave
+let saveTimer;
+function collect(){
+  const data = {
+    ic: document.getElementById("ic").value,
+    nazev: document.getElementById("nazev").value,
+    datum: document.getElementById("datum").value,
+    order: CATEGORIES.map(c=>c.id),
+    custom: CATEGORIES.filter(c=>c.isCustom).map(c=>({
+      id:c.id, emoji:c.emoji, title:c.title,
+      hint: document.getElementById(`hint-${c.id}`) ? document.getElementById(`hint-${c.id}`).textContent : c.hint
+    })),
+    answers: {},
+    questions: {},
+    titles: {}
+  };
+  CATEGORIES.forEach(c=>{
+    const ta = document.getElementById(`ta-${c.id}`);
+    const h = document.getElementById(`hint-${c.id}`);
+    const t = document.querySelector(`#title-${c.id} .title-text`);
+    data.answers[c.id] = ta ? ta.value : (c.answer || "");
+    data.questions[c.id] = h ? h.textContent : c.hint;
+    data.titles[c.id] = t ? t.textContent : c.title;
+  });
+  return data;
+}
+
+async function saveDraft(){
+  try{
+    await storageAPI.set(STORAGE_KEY, JSON.stringify(collect()), false);
+    statusEl.textContent = "Uloženo " + new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    statusEl.textContent = "Uložení se nezdařilo";
+  }
+}
+
+function scheduleSave(){
+  statusEl.textContent = "Ukládám…";
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveDraft, 700);
+}
+
+async function loadDraft(){
+  try{
+    const res = await storageAPI.get(STORAGE_KEY, false);
+    if(!res) return;
+    const data = JSON.parse(res.value);
+    if(data.ic) document.getElementById("ic").value = data.ic;
+    if(data.nazev) document.getElementById("nazev").value = data.nazev;
+    if(data.datum) document.getElementById("datum").value = data.datum;
+
+    // re-create any custom questions that were added
+    if(Array.isArray(data.custom)){
+      data.custom.forEach(c=>{
+        if(!CATEGORIES.find(existing=>existing.id===c.id)){
+          CATEGORIES.push({id:c.id, emoji:c.emoji||"❓", title:c.title, hint:c.hint||"", answer:"", isCustom:true});
+        }
+      });
+    }
+
+    // restore saved order
+    if(Array.isArray(data.order) && data.order.length){
+      const byId = Object.fromEntries(CATEGORIES.map(c=>[c.id,c]));
+      const ordered = data.order.map(id=>byId[id]).filter(Boolean);
+      CATEGORIES.forEach(c=>{ if(!ordered.includes(c)) ordered.push(c); });
+      CATEGORIES = ordered;
+    }
+
+    // apply saved answers / question text / titles
+    CATEGORIES.forEach(c=>{
+      const v = data.answers && data.answers[c.id];
+      if(v) c.answer = v;
+      const q = data.questions && data.questions[c.id];
+      if(q) c.hint = q;
+      const t = data.titles && data.titles[c.id];
+      if(t) c.title = t;
+    });
+
+    renderSections();
+    statusEl.textContent = "Načteno z rozpracované verze";
+  }catch(e){
+    // no draft yet, ignore
+  }
+}
+loadDraft();
+
+["ic","nazev","datum"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", scheduleSave);
+});
+
+function sanitize(str){
+  return (str || "").trim().replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g,"_");
+}
+
+function buildFilename(){
+  const ic = sanitize(document.getElementById("ic").value) || "IC";
+  const nazev = sanitize(document.getElementById("nazev").value) || "Zakaznik";
+  const datum = document.getElementById("datum").value || new Date().toISOString().slice(0,10);
+  return `${ic}_${nazev}_${datum}`;
+}
+
+function buildPrintable(){
+  const ic = document.getElementById("ic").value || "—";
+  const nazev = document.getElementById("nazev").value || "—";
+  const datum = document.getElementById("datum").value || "—";
+  const printable = document.getElementById("printable");
+  let html = `
+    <h1>Zákaznický dotazník</h1>
+    <div class="meta">
+      <div><strong>Zákazník:</strong> ${nazev}</div>
+      <div><strong>IČ:</strong> ${ic}</div>
+      <div><strong>Datum:</strong> ${datum}</div>
+    </div>
+  `;
+  CATEGORIES.forEach(c=>{
+    const val = (document.getElementById(`ta-${c.id}`).value || "").trim();
+    html += `
+      <div class="psection">
+        <h3>${c.emoji} ${escapeHtml(c.title)}</h3>
+        <p class="${val ? '' : 'empty'}">${val ? escapeHtml(val) : 'Bez poznámky'}</p>
+      </div>
+    `;
+  });
+  printable.innerHTML = html;
+}
+
+async function generatePdf(){
+  buildPrintable();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:"pt", format:"a4"});
+  const el = document.getElementById("printable");
+  return new Promise((resolve)=>{
+    doc.html(el, {
+      x:20, y:20,
+      width:555,
+      windowWidth:760,
+      callback: function(doc){
+        resolve(doc);
+      }
+    });
+  });
+}
+
+document.getElementById("pdfBtn").addEventListener("click", async ()=>{
+  const btn = document.getElementById("pdfBtn");
+  btn.disabled = true;
+  statusEl.textContent = "Generuji PDF…";
+  try{
+    const doc = await generatePdf();
+    doc.save(buildFilename() + ".pdf");
+    statusEl.textContent = "PDF staženo";
+  }catch(e){
+    statusEl.textContent = "Chyba při generování PDF";
+  }
+  btn.disabled = false;
+});
+
+document.getElementById("mailBtn").addEventListener("click", async ()=>{
+  const btn = document.getElementById("mailBtn");
+  btn.disabled = true;
+  statusEl.textContent = "Připravuji e-mail…";
+  const filename = buildFilename();
+  const subject = filename;
+  try{
+    const doc = await generatePdf();
+    const blob = doc.output("blob");
+    const file = new File([blob], filename + ".pdf", {type:"application/pdf"});
+
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({
+        files:[file],
+        title: subject,
+        text: subject
+      });
+      statusEl.textContent = "Odesláno přes sdílení";
+    } else {
+      doc.save(filename + ".pdf");
+      const body = encodeURIComponent(
+        "Dobrý den,\n\nv příloze zasílám vyplněný dotazník.\n\nPDF se stáhlo do zařízení – prosím ručně jej přiložte k tomuto e-mailu (prohlížeč nedovolí přílohu vložit automaticky).\n\n"
+      );
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${body}`;
+      showToast("PDF staženo. V otevřeném e-mailu prosím ručně přiložte soubor " + filename + ".pdf");
+      statusEl.textContent = "PDF staženo, e-mail otevřen";
+    }
+  }catch(e){
+    statusEl.textContent = "Chyba při odesílání";
+  }
+  btn.disabled = false;
+});
+</script>
+
+</body>
+</html>
