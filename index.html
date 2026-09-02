@@ -207,6 +207,14 @@
   .section.dragging{opacity:.5;}
   .section.drag-over{border-top:2px solid var(--teal);}
 
+  .clear-form-bar{display:flex;justify-content:center;margin:4px 0 20px;}
+  .clear-form-bar .btn-small{
+    border-color:var(--danger);
+    color:var(--danger);
+    padding:8px 16px;
+  }
+  .clear-form-bar .btn-small:hover{background:#fbebe8;}
+
   .manage-bar{display:flex;justify-content:flex-end;margin:2px 0 24px;}
   .manage-gear-btn{
     background:var(--card);
@@ -344,6 +352,10 @@
 
   <div id="sections"></div>
 
+  <div class="clear-form-bar">
+    <button type="button" class="btn-small btn-ghost" id="clearFormBtn">Vymazat vyplněné údaje</button>
+  </div>
+
   <div class="manage-bar">
     <button type="button" class="manage-gear-btn" id="manageGearBtn" title="Spravovat otázky">⚙️ Spravovat otázky</button>
   </div>
@@ -359,10 +371,6 @@
       <div class="hint-edit-actions">
         <button type="button" class="btn-small btn-accent" id="addQuestionBtn">Přidat otázku</button>
       </div>
-    </div>
-    <div>
-      <span class="panel-label">Vyčistit formulář</span><br>
-      <button type="button" class="btn-small btn-ghost" id="clearFormBtn" style="margin-top:6px;border-color:var(--danger);color:var(--danger);">Vymazat vyplněné údaje</button>
     </div>
   </div>
 </div>
