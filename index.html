@@ -771,8 +771,9 @@ async function generatePdf(){
     try{ await document.fonts.ready; }catch(e){}
   }
 
+  const scale = 2;
   const canvas = await html2canvas(el, {
-    scale: 2,
+    scale,
     backgroundColor: "#ffffff",
     useCORS: true,
     windowWidth: el.scrollWidth,
@@ -783,23 +784,63 @@ async function generatePdf(){
     throw new Error("Prázdný canvas – obsah se nepodařilo vykreslit.");
   }
 
-  const imgData = canvas.toDataURL("image/jpeg", 0.95);
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF("p", "pt", "a4");
   const pdfWidth = doc.internal.pageSize.getWidth();
   const pdfHeight = doc.internal.pageSize.getHeight();
-  const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+  const pxToPt = pdfWidth / canvas.width;
+  const pageCapacityPx = pdfHeight / pxToPt;
 
-  let heightLeft = imgHeight;
-  let position = 0;
-  doc.addImage(imgData, "JPEG", 0, position, pdfWidth, imgHeight);
-  heightLeft -= pdfHeight;
+  // bottom edge (in canvas px) of every block we must never cut through
+  const elRect = el.getBoundingClientRect();
+  const blocks = Array.from(el.querySelectorAll(".meta, .psection"));
+  const breakPoints = blocks.map(b=>{
+    const r = b.getBoundingClientRect();
+    return Math.round((r.bottom - elRect.top) * scale);
+  });
+  if(!breakPoints.length || breakPoints[breakPoints.length-1] < canvas.height){
+    breakPoints.push(canvas.height);
+  }
 
-  while(heightLeft > 0){
-    position = heightLeft - imgHeight;
-    doc.addPage();
-    doc.addImage(imgData, "JPEG", 0, position, pdfWidth, imgHeight);
-    heightLeft -= pdfHeight;
+  let firstPage = true;
+  function addPageImage(sy, sh){
+    if(sh <= 0) return;
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = canvas.width;
+    pageCanvas.height = sh;
+    const ctx = pageCanvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, sh);
+    ctx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+    const imgData = pageCanvas.toDataURL("image/jpeg", 0.95);
+    if(!firstPage) doc.addPage();
+    firstPage = false;
+    doc.addImage(imgData, "JPEG", 0, 0, pdfWidth, sh * pxToPt);
+  }
+
+  let sliceStart = 0;
+  let lastGoodBreak = 0;
+  let i = 0;
+  while(i < breakPoints.length){
+    const bp = breakPoints[i];
+    if(bp - sliceStart > pageCapacityPx){
+      if(lastGoodBreak > sliceStart){
+        // cut just after the previous block, then re-test this block on the new page
+        addPageImage(sliceStart, lastGoodBreak - sliceStart);
+        sliceStart = lastGoodBreak;
+        continue;
+      }
+      // a single block is taller than one page - force a cut, no way around it
+      const sh = Math.min(pageCapacityPx, canvas.height - sliceStart);
+      addPageImage(sliceStart, sh);
+      sliceStart += sh;
+      continue;
+    }
+    lastGoodBreak = bp;
+    i++;
+  }
+  if(sliceStart < canvas.height){
+    addPageImage(sliceStart, canvas.height - sliceStart);
   }
 
   return doc;
