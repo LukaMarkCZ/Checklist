@@ -860,12 +860,34 @@ document.getElementById("pdfBtn").addEventListener("click", async ()=>{
   btn.disabled = false;
 });
 
+function buildEmailSummary(){
+  const ic = document.getElementById("ic").value.trim() || "—";
+  const nazev = document.getElementById("nazev").value.trim() || "—";
+  const datum = document.getElementById("datum").value || "—";
+  const lines = [];
+  lines.push(`Zákazník: ${nazev}`);
+  lines.push(`IČ: ${ic}`);
+  lines.push(`Datum: ${datum}`);
+  lines.push("");
+  CATEGORIES.forEach(c=>{
+    const ta = document.getElementById(`ta-${c.id}`);
+    const titleEl = document.querySelector(`#title-${c.id} .title-text`);
+    const title = titleEl ? titleEl.textContent : c.title;
+    const val = (ta ? ta.value : (c.answer || "")).trim();
+    lines.push(`${c.emoji ? c.emoji + " " : ""}${title}`);
+    lines.push(val ? val : "Bez poznámky");
+    lines.push("");
+  });
+  return lines.join("\n");
+}
+
 document.getElementById("mailBtn").addEventListener("click", async ()=>{
   const btn = document.getElementById("mailBtn");
   btn.disabled = true;
   statusEl.textContent = "Připravuji e-mail…";
   const filename = buildFilename();
   const subject = filename;
+  const summary = buildEmailSummary();
   try{
     const doc = await generatePdf();
     const blob = doc.output("blob");
@@ -875,14 +897,20 @@ document.getElementById("mailBtn").addEventListener("click", async ()=>{
       await navigator.share({
         files:[file],
         title: subject,
-        text: subject
+        text: "Dobrý den,\n\nv příloze zasílám vyplněný dotazník. Přehled níže:\n\n" + summary
       });
       statusEl.textContent = "Odesláno přes sdílení";
     } else {
       doc.save(filename + ".pdf");
-      const body = encodeURIComponent(
-        "Dobrý den,\n\nv příloze zasílám vyplněný dotazník.\n\nPDF se stáhlo do zařízení – prosím ručně jej přiložte k tomuto e-mailu (prohlížeč nedovolí přílohu vložit automaticky).\n\n"
-      );
+      let bodyText =
+        "Dobrý den,\n\nv příloze zasílám vyplněný dotazník. Přehled níže:\n\n" +
+        summary +
+        "\nPDF se stáhlo do zařízení – prosím ručně jej přiložte k tomuto e-mailu (prohlížeč nedovolí přílohu vložit automaticky).\n";
+      const MAX_BODY_CHARS = 1500;
+      if(bodyText.length > MAX_BODY_CHARS){
+        bodyText = bodyText.slice(0, MAX_BODY_CHARS) + "\n\n… (text zkrácen kvůli limitu e-mailového odkazu, kompletní znění je v přiloženém PDF)\n";
+      }
+      const body = encodeURIComponent(bodyText);
       window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${body}`;
       showToast("PDF staženo. V otevřeném e-mailu prosím ručně přiložte soubor " + filename + ".pdf");
       statusEl.textContent = "PDF staženo, e-mail otevřen";
