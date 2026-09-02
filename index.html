@@ -360,6 +360,10 @@
         <button type="button" class="btn-small btn-accent" id="addQuestionBtn">Přidat otázku</button>
       </div>
     </div>
+    <div>
+      <span class="panel-label">Vyčistit formulář</span><br>
+      <button type="button" class="btn-small btn-ghost" id="clearFormBtn" style="margin-top:6px;border-color:var(--danger);color:var(--danger);">Vymazat vyplněné údaje</button>
+    </div>
   </div>
 </div>
 
@@ -634,6 +638,25 @@ document.getElementById("addQuestionBtn").addEventListener("click", ()=>{
   scheduleSave();
 });
 
+document.getElementById("clearFormBtn").addEventListener("click", ()=>{
+  const ok = confirm("Opravdu chcete vymazat IČ, název zákazníka, datum a všechny poznámky? Nastavení otázek (názvy, pořadí, přidané otázky) zůstane zachováno. Tuto akci nelze vzít zpět.");
+  if(!ok) return;
+
+  document.getElementById("ic").value = "";
+  document.getElementById("nazev").value = "";
+  document.getElementById("datum").valueAsDate = new Date();
+
+  CATEGORIES.forEach(c=>{
+    c.answer = "";
+    const ta = document.getElementById(`ta-${c.id}`);
+    if(ta) ta.value = "";
+    updateDot(c.id);
+  });
+
+  scheduleSave();
+  showToast("Formulář byl vymazán.");
+});
+
 document.getElementById("datum").valueAsDate = new Date();
 
 // autosave
@@ -894,11 +917,24 @@ document.getElementById("mailBtn").addEventListener("click", async ()=>{
     const file = new File([blob], filename + ".pdf", {type:"application/pdf"});
 
     if(navigator.canShare && navigator.canShare({files:[file]})){
+      const shareText = "Dobrý den,\n\nv příloze zasílám vyplněný dotazník. Přehled níže:\n\n" + summary;
+      let copied = false;
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(shareText);
+          copied = true;
+        }
+      }catch(e){ /* clipboard permission may be blocked, ignore */ }
+
       await navigator.share({
         files:[file],
         title: subject,
-        text: "Dobrý den,\n\nv příloze zasílám vyplněný dotazník. Přehled níže:\n\n" + summary
+        text: shareText
       });
+
+      if(copied){
+        showToast("Text dotazníku je zkopírovaný ve schránce – pokud se do zprávy nevloží automaticky, vložte ho ručně přes Ctrl+V.", 6000);
+      }
       statusEl.textContent = "Odesláno přes sdílení";
     } else {
       doc.save(filename + ".pdf");
